@@ -12,7 +12,7 @@ CONFIG += staticlib
 
 win32:CONFIG(release, debug|release): LIBS += -L"C:/Program Files/OpenSSL/lib/" -llibcrypto
 else:win32:CONFIG(debug, debug|release): LIBS += -L"C:/Program Files/OpenSSL/lib/" -llibcrypto
-else:unix: LIBS += -L"/usr/local/lib" -llibcrypto
+else:unix: LIBS += -L"/usr/local/lib/" -lcrypto
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked as deprecated (the exact warnings
@@ -21,7 +21,7 @@ else:unix: LIBS += -L"/usr/local/lib" -llibcrypto
 DEFINES += QT_DEPRECATED_WARNINGS
 
 win32:INCLUDEPATH += "C:/Program Files/OpenSSL/include/"
-else:INCLUDEPATH += "/usr/local/include"
+else:INCLUDEPATH += "/usr/local/include/"
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
