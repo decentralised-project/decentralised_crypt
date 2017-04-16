@@ -19,6 +19,8 @@ public:
     ~decentralised_crypt();
 
     EC_KEY* generate_key_pair();
+    const EC_POINT* get_public_key(EC_KEY *keypair);
+    QString to_base58(const EC_POINT* public_key);
 
 signals:
 
