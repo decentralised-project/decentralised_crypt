@@ -20,6 +20,7 @@ public:
 
     EC_KEY* generate_key_pair();
     const EC_POINT* get_public_key(EC_KEY *keypair);
+    int ecdh(unsigned char **secret, EC_KEY *key, const EC_POINT *pPub);
     QString to_base58(const EC_POINT* public_key);
 
 signals:

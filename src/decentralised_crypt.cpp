@@ -92,3 +92,22 @@ QString decentralised_crypt::to_base58(const EC_POINT* public_key)
 
     return str;
 }
+
+int decentralised_crypt::ecdh(unsigned char **secret, EC_KEY *key, const EC_POINT *pPub)
+{
+    int secretLen;
+
+    secretLen = EC_GROUP_get_degree(EC_KEY_get0_group(key));
+    secretLen = (secretLen + 7) / 8;
+
+    *secret = (unsigned char*)malloc(secretLen);
+    if (!(*secret))
+    {
+        fflush(stderr);
+        free(*secret);
+        throw std::runtime_error("Failed to allocate memory for secret.\n");
+    }
+    secretLen = ECDH_compute_key(*secret, secretLen, pPub, key, NULL);
+
+    return secretLen;
+}
