@@ -16,17 +16,27 @@ class decentralised_crypt: public QObject
     Q_OBJECT
 public:
     explicit decentralised_crypt(QObject *parent = 0);
-    ~decentralised_crypt();
+    virtual ~decentralised_crypt() {
+        if (_eckey)
+            EC_KEY_free(_eckey);
+
+        if (_publicKey)
+            EC_POINT_free(_publicKey);
+
+        EVP_cleanup();
+    }
 
     EC_KEY* generate_key_pair();
     const EC_POINT* get_public_key(EC_KEY *keypair);
-    int ecdh(unsigned char **secret, EC_KEY *key, const EC_POINT *pPub);
+    QByteArray ecdh(EC_KEY *key, const EC_POINT *pPub);
     QString to_base58(const EC_POINT* public_key);
+    const EC_POINT* from_base58(std::string base58);
 
 signals:
 
 private:
     EC_KEY* _eckey;
+    EC_POINT* _publicKey;
 };
 
 #endif // DECENTRALISED_CRYPT_H

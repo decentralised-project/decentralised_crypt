@@ -5,14 +5,7 @@ static const char* pszBase58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnop
 decentralised_crypt::decentralised_crypt(QObject *parent) : QObject(parent)
 {
     _eckey = NULL;
-}
-
-decentralised_crypt::~decentralised_crypt()
-{
-    if (_eckey)
-        EC_KEY_free(_eckey);
-
-    EVP_cleanup();
+    _publicKey = NULL;
 }
 
 EC_KEY* decentralised_crypt::generate_key_pair()
@@ -93,21 +86,84 @@ QString decentralised_crypt::to_base58(const EC_POINT* public_key)
     return str;
 }
 
-int decentralised_crypt::ecdh(unsigned char **secret, EC_KEY *key, const EC_POINT *pPub)
+const EC_POINT* decentralised_crypt::from_base58(std::string base58)
+{
+    const char* psz = base58.c_str();
+    std::vector<unsigned char> vch;
+
+    // Skip leading spaces.
+    while (*psz && isspace(*psz))
+        psz++;
+    // Skip and count leading '1's.
+    int zeroes = 0;
+    while (*psz == '1') {
+        zeroes++;
+        psz++;
+    }
+    // Allocate enough space in big-endian base256 representation.
+    std::vector<unsigned char> b256(strlen(psz) * 733 / 1000 + 1); // log(58) / log(256), rounded up.
+    // Process the characters.
+    while (*psz && !isspace(*psz)) {
+        // Decode base58 character
+        const char* ch = strchr(pszBase58, *psz);
+        if (ch == NULL)
+            return NULL;
+
+        // Apply "b256 = b256 * 58 + ch".
+        int carry = ch - pszBase58;
+        for (std::vector<unsigned char>::reverse_iterator it = b256.rbegin(); it != b256.rend(); it++) {
+            carry += 58 * (*it);
+            *it = carry % 256;
+            carry /= 256;
+        }
+        psz++;
+    }
+    // Skip trailing spaces.
+    while (isspace(*psz))
+        psz++;
+    if (*psz != 0)
+        return NULL;
+
+    // Skip leading zeroes in b256.
+    std::vector<unsigned char>::iterator it = b256.begin();
+    while (it != b256.end() && *it == 0)
+        it++;
+    // Copy result into output vector.
+    vch.reserve(zeroes + (b256.end() - it));
+    vch.assign(zeroes, 0x00);
+    while (it != b256.end())
+        vch.push_back(*(it++));
+
+    EC_GROUP *ecgrp = EC_GROUP_new_by_curve_name(NID_secp256k1);
+    _publicKey = EC_POINT_new(ecgrp);
+
+    EC_POINT_oct2point(ecgrp, _publicKey, vch.data(), vch.size(), NULL);
+
+    EC_GROUP_free(ecgrp);
+
+    return _publicKey;
+}
+
+QByteArray decentralised_crypt::ecdh(EC_KEY *key, const EC_POINT *pPub)
 {
     int secretLen;
+    unsigned char* secret;
 
     secretLen = EC_GROUP_get_degree(EC_KEY_get0_group(key));
     secretLen = (secretLen + 7) / 8;
 
-    *secret = (unsigned char*)malloc(secretLen);
-    if (!(*secret))
+    secret = (unsigned char*)malloc(secretLen);
+    if (!secret)
     {
         fflush(stderr);
-        free(*secret);
+        free(secret);
         throw std::runtime_error("Failed to allocate memory for secret.\n");
     }
-    secretLen = ECDH_compute_key(*secret, secretLen, pPub, key, NULL);
+    secretLen = ECDH_compute_key(secret, secretLen, pPub, key, NULL);
 
-    return secretLen;
+    QByteArray result;
+    // TODO: (needs to be a copy) result.fromRawData(secret, secretLen);
+    free(secret);
+
+    return result;
 }
