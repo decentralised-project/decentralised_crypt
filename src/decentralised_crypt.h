@@ -30,7 +30,7 @@ public:
     const EC_POINT* get_public_key(EC_KEY *keypair);
     QByteArray ecdh(EC_KEY *key, const EC_POINT *pPub);
     QString to_base58(const EC_POINT* public_key);
-    const EC_POINT* from_base58(std::string base58);
+    const EC_POINT* from_base58(QString base58);
 
 signals:
 

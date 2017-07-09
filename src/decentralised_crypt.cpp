@@ -86,9 +86,9 @@ QString decentralised_crypt::to_base58(const EC_POINT* public_key)
     return str;
 }
 
-const EC_POINT* decentralised_crypt::from_base58(std::string base58)
+const EC_POINT* decentralised_crypt::from_base58(QString base58)
 {
-    const char* psz = base58.c_str();
+    const char* psz = base58.toLocal8Bit().constData();
     std::vector<unsigned char> vch;
 
     // Skip leading spaces.
